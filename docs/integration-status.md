@@ -8,6 +8,6 @@ Verified on October 12, 2026:
 - The authenticated `python -m neatlogs doctor --probe --json` passes against the project workspace, with the Doctor trace visible and finalized remotely, `readback_span_count: 4`, and no dropped spans.
 - The local replay contract and demo pass without network access.
 - The project API key is intentionally kept out of the repository and shell history.
-- The application's own live export remains **unverified** until the instrumented project entry point is run and its trace is observed in the dashboard. The Doctor probe is synthetic pipeline verification and is reported separately.
+- The instrumented project entry point was run with the project key, and the resulting replay trace was observed in the neatlogs dashboard with the baseline and counterfactual payloads, `FAIL` to `PASS` verdicts, and `apply_policy` as the first divergence. The Doctor probe remains separately identified as synthetic pipeline verification.
 
-The remaining integration checkpoint is verification that the baseline and counterfactual traces from the project appear in the neatlogs dashboard.
+The remaining product work is optional polish: richer semantic span attributes, linked trace IDs in the UI, and editable interventions beyond the v1 to v2 fixture.
