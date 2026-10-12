@@ -2,10 +2,10 @@
 
 Verified on October 12, 2026:
 
-- The local replay contract passes without network access.
-- The published PyPI package `neatlogs==1.1.8` imports successfully.
-- That package exposes `init`, but not the `span`, `flush`, or `shutdown` APIs shown in the current neatlogs Python SDK documentation.
-- No `NEATLOGS_API_KEY` is present in this environment.
-- Therefore live neatlogs export is **blocked and unclaimed**, rather than simulated.
+- The project now requires Python `>=3.11,<3.14`, matching the current neatlogs SDK support window.
+- A fresh Python 3.12 environment installs `neatlogs==1.4.26`.
+- `python -m neatlogs doctor --local --json` passes with schema version `2`, `span_count: 4`, and `dropped_spans: 0`.
+- The local replay contract and demo pass without network access.
+- Live export remains **unverified** because no `NEATLOGS_API_KEY` is available in the local environment. No network trace is being claimed.
 
-The next integration checkpoint is to obtain the hackathon workspace key and the SDK release that exposes the documented tracing APIs, run the SDK's official local and authenticated probes, then emit the baseline and counterfactual traces from the real agent.
+The remaining integration checkpoint is an authenticated probe with the hackathon workspace key, followed by verification that the baseline and counterfactual traces appear in the neatlogs dashboard.
