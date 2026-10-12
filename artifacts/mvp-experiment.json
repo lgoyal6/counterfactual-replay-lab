@@ -1,0 +1,111 @@
+{
+  "baseline": {
+    "trace_id": "7e2b79a36b7b",
+    "request": "Order 1042 is eligible for a refund",
+    "policy_version": "v1",
+    "spans": [
+      {
+        "name": "refund_agent",
+        "kind": "agent",
+        "input": "Order 1042 is eligible for a refund",
+        "output": "planned refund check",
+        "metadata": {}
+      },
+      {
+        "name": "lookup_order",
+        "kind": "tool",
+        "input": "Order 1042 is eligible for a refund",
+        "output": "eligible",
+        "metadata": {}
+      },
+      {
+        "name": "apply_policy",
+        "kind": "tool",
+        "input": "v1",
+        "output": "deny",
+        "metadata": {}
+      },
+      {
+        "name": "decide",
+        "kind": "decision",
+        "input": "deny",
+        "output": "deny_refund",
+        "metadata": {}
+      },
+      {
+        "name": "policy_evaluator",
+        "kind": "evaluator",
+        "input": "deny_refund",
+        "output": "FAIL",
+        "metadata": {}
+      }
+    ],
+    "decision": "deny_refund",
+    "verdict": "FAIL",
+    "score": 0.0,
+    "cost_usd": 0.002,
+    "latency_ms": 240
+  },
+  "counterfactual": {
+    "trace_id": "8ac70c02791d",
+    "request": "Order 1042 is eligible for a refund",
+    "policy_version": "v2",
+    "spans": [
+      {
+        "name": "refund_agent",
+        "kind": "agent",
+        "input": "Order 1042 is eligible for a refund",
+        "output": "planned refund check",
+        "metadata": {}
+      },
+      {
+        "name": "lookup_order",
+        "kind": "tool",
+        "input": "Order 1042 is eligible for a refund",
+        "output": "eligible",
+        "metadata": {}
+      },
+      {
+        "name": "apply_policy",
+        "kind": "tool",
+        "input": "v2",
+        "output": "approve",
+        "metadata": {}
+      },
+      {
+        "name": "decide",
+        "kind": "decision",
+        "input": "approve",
+        "output": "approve_refund",
+        "metadata": {}
+      },
+      {
+        "name": "policy_evaluator",
+        "kind": "evaluator",
+        "input": "approve_refund",
+        "output": "PASS",
+        "metadata": {}
+      }
+    ],
+    "decision": "approve_refund",
+    "verdict": "PASS",
+    "score": 1.0,
+    "cost_usd": 0.002,
+    "latency_ms": 240
+  },
+  "experiment": {
+    "baseline_trace_id": "7e2b79a36b7b",
+    "counterfactual_trace_id": "8ac70c02791d",
+    "changed_variable": "policy_version",
+    "old_value": "v1",
+    "new_value": "v2",
+    "same_request": true,
+    "same_prefix": true,
+    "first_divergence": "apply_policy",
+    "score_delta": 1.0,
+    "cost_delta_usd": 0.0,
+    "latency_delta_ms": 0,
+    "recommendation": "KEEP",
+    "refusal_reason": null
+  }
+}

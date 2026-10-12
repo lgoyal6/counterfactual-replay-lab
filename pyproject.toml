@@ -1,0 +1,6 @@
+[project]
+name = "counterfactual-replay-lab"
+version = "0.1.0"
+description = "A deterministic counterfactual replay MVP for AI agent traces"
+requires-python = ">=3.11"
+
