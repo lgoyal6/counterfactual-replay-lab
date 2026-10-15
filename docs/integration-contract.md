@@ -40,6 +40,15 @@ review, then delete this run's private copies after evidence publication is comp
 No customer data belongs in these synthetic fixtures. Correlate baseline and replay
 with trace IDs and the experiment's baseline/counterfactual IDs.
 
+Semantic trace IDs remain stable across repeated executions. A separate
+`content_checksum` binds the complete exported execution, including tool counts,
+final ledger and local timing. Import validates the supported tool sequence,
+expected ledger effects, finite nonnegative timing and unmeasured cost as well as
+the checksum. This detects inconsistent edits, not a dishonest producer that
+rewrites valid fields and their checksum. Older exports without this checksum
+must be reproduced with their recorded source revision; frozen studies remain
+retained under that revision and are not silently upgraded.
+
 Run the offline demo with `PYTHONPATH=src python3 scripts/demo.py --output PATH`.
 `PATH` should point into private run state or an OS temporary directory. Uploads
 require `--live-neatlogs` and separately authorized credentials. An ambient API key
