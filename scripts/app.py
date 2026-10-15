@@ -1,3 +1,8 @@
+"""Serve the local replay review interface on the loopback address.
+
+core.py runs the selected policy against the captured refund fixture.
+Only supported policy choices reach the replay engine.
+"""
 from __future__ import annotations
 
 import json

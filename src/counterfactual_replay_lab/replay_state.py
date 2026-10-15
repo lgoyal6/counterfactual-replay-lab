@@ -1,4 +1,8 @@
-"""Captured local dependencies and an isolated, transactional effect ledger."""
+"""Store captured tool observations and restore isolated refund ledgers.
+
+core.py validates these records before replaying the policy suffix.
+SQLite commits each local effect with its idempotency key for safe retries.
+"""
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json

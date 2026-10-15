@@ -1,3 +1,8 @@
+"""Export a local baseline, counterfactual trace and their comparison.
+
+core.py produces the experiment; neatlogs_integration.py handles uploads.
+Remote export requires an explicit flag as well as authorized credentials.
+"""
 import argparse
 import json
 import os
