@@ -1,4 +1,8 @@
-"""Paired offline full-rerun versus captured suffix study, with private outputs."""
+"""Compare full reruns with captured suffix replay on frozen local orders.
+
+core.py supplies the replay path and independent fixture decisions.
+Write paired timings and tool counts privately; these are not live costs.
+"""
 import argparse
 from dataclasses import asdict
 from hashlib import sha256
