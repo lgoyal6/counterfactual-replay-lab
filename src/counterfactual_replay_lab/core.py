@@ -5,8 +5,9 @@ Derived trace fields must agree with captured spans before comparison or import.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 import json
+import math
 import re
 from time import perf_counter_ns
 from typing import Any, Callable, Literal
@@ -62,9 +63,16 @@ class Trace:
     state_fingerprint: str | None = None
     executed_tools: tuple[str, ...] = ()
     ledger_after: tuple[tuple[str, str], ...] = ()
+    content_checksum: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    @property
+    def checksum(self) -> str:
+        content = self.to_dict()
+        del content["content_checksum"]
+        return digest(content)
 
 
     @classmethod
@@ -97,9 +105,6 @@ def validate_trace(trace: Trace) -> ReplayState:
     )
     if trace.spans[:2] != expected_prefix:
         raise ValueError("Replay prefix disagrees with recorded observation")
-    if trace.trace_id != digest({"request": trace.request, "policy": trace.policy_version,
-                                 "spans": [asdict(s) for s in trace.spans], "state": state.fingerprint})[:12]:
-        raise ValueError("Trace content changed")
     expected_verdict = "UNKNOWN" if state.expected_decision is None else (
         "PASS" if trace.decision == state.expected_decision else "FAIL")
     if trace.verdict != expected_verdict or trace.score != (1.0 if expected_verdict == "PASS" else 0.0):
@@ -113,6 +118,27 @@ def validate_trace(trace: Trace) -> ReplayState:
     )
     if trace.decision != policy_decision or trace.spans[2:] != expected_suffix:
         raise ValueError("Trace decision or suffix disagrees with captured spans")
+    suffix_tools = ("apply_policy",) + (("local_refund",) if policy_decision == "approve_refund" else ())
+    if trace.executed_tools not in (suffix_tools, ("lookup_order",) + suffix_tools):
+        raise ValueError("Executed tools disagree with the supported replay paths")
+    effects = dict(state.ledger_snapshot)
+    if len(effects) != len(state.ledger_snapshot):
+        raise ValueError("Captured ledger contains duplicate effect keys")
+    if policy_decision == "approve_refund":
+        key = digest({"request": trace.request, "operation": "refund"})
+        if key in effects and effects[key] != policy_decision:
+            raise ValueError("Captured ledger conflicts with the refund effect")
+        effects[key] = policy_decision
+    if trace.ledger_after != tuple(sorted(effects.items())):
+        raise ValueError("Final ledger disagrees with the captured state and decision")
+    if (type(trace.latency_ms) not in (int, float) or not math.isfinite(trace.latency_ms)
+            or trace.latency_ms < 0 or trace.cost_usd is not None):
+        raise ValueError("Local timing must be finite and nonnegative; cost is unmeasured")
+    if trace.trace_id != digest({"request": trace.request, "policy": trace.policy_version,
+                                 "spans": [asdict(s) for s in trace.spans], "state": state.fingerprint})[:12]:
+        raise ValueError("Trace content changed")
+    if trace.content_checksum != trace.checksum:
+        raise ValueError("Trace execution or measurement content changed")
     return state
 
 
@@ -181,11 +207,12 @@ class RefundAgent:
         )
         trace_id = digest({"request": request, "policy": policy,
                            "spans": [asdict(s) for s in spans], "state": state.fingerprint})[:12]
-        return Trace(trace_id, request, policy, spans, decision, verdict,
+        trace = Trace(trace_id, request, policy, spans, decision, verdict,
                      1.0 if verdict == "PASS" else 0.0, None,
                      (perf_counter_ns() - started) / 1e6, state, state.fingerprint,
                      executed + ("apply_policy",) + (("local_refund",) if decision == "approve_refund" else ()),
                      ledger.snapshot())
+        return replace(trace, content_checksum=trace.checksum)
 
     def replay_suffix(self, baseline: Trace, new_value: str,
                       cancelled: Callable[[], bool] = lambda: False) -> Trace:
