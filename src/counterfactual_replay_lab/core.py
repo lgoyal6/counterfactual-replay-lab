@@ -1,3 +1,8 @@
+"""Capture local refund decisions and compare one-policy replay interventions.
+
+replay_state.py owns recorded dependencies and the isolated effect ledger.
+Derived trace fields must agree with captured spans before comparison or import.
+"""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -99,6 +104,15 @@ def validate_trace(trace: Trace) -> ReplayState:
         "PASS" if trace.decision == state.expected_decision else "FAIL")
     if trace.verdict != expected_verdict or trace.score != (1.0 if expected_verdict == "PASS" else 0.0):
         raise ValueError("Evaluator disagrees with scenario oracle")
+    policy_decision = RefundAgent.apply_policy(trace.policy_version, observed)
+    policy_result = policy_decision.removesuffix("_refund")
+    expected_suffix = (
+        Span("apply_policy", "tool", trace.policy_version, policy_result),
+        Span("decide", "decision", policy_result, policy_decision),
+        Span("policy_evaluator", "evaluator", policy_decision, expected_verdict),
+    )
+    if trace.decision != policy_decision or trace.spans[2:] != expected_suffix:
+        raise ValueError("Trace decision or suffix disagrees with captured spans")
     return state
 
 
