@@ -8,4 +8,8 @@ import sys
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from scripts.app import Handler as handler  # noqa: E402,F401
+from scripts.app import Handler  # noqa: E402
+
+
+class handler(Handler):
+    """Expose the shared handler to Vercel's Python entrypoint discovery."""
