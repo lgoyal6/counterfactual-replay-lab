@@ -56,6 +56,8 @@ def study(cases, repetitions, warmup):
         result = compare(baseline, suffix, changed_variable='policy_version', old_value='v1', new_value='v2')
         rows.append({'scenario':case,'baseline':baseline.to_dict(),'full':full.to_dict(),
                      'suffix':suffix.to_dict(),'experiment':asdict(result),'samples':samples})
+        if len(rows) % 1000 == 0:
+            print(f'Evaluated {len(rows)}/{len(cases)} orders', file=sys.stderr, flush=True)
     return rows
 
 
@@ -64,7 +66,7 @@ def summarize(rows):
     rng = random.Random(20261015)
     boot = sorted(statistics.mean(rng.choices(deltas,k=len(deltas))) for _ in range(2000))
     denials = [r for r in rows if r['scenario']['expected_decision']=='deny_refund']
-    return {'n_independent_synthetic_orders':len(rows),
+    return {'n_synthetic_orders':len(rows),
             'baseline_correct':sum(r['baseline']['verdict']=='PASS' for r in rows),
             'suffix_correct':sum(r['suffix']['verdict']=='PASS' for r in rows),
             'unsafe_keep':sum(r['experiment']['recommendation']=='KEEP' and r['suffix']['decision']!=r['scenario']['expected_decision'] for r in rows),
@@ -75,9 +77,21 @@ def summarize(rows):
             'cluster_bootstrap_95pct_ns':[boot[49],boot[1949]],
             'unit_of_uncertainty':'synthetic order, not repetition',
             'cost_usd':None,
-            'limitations':['Synthetic local CPU fixture only','One read-only dependency and local SQLite effects',
+            'limitations':['Synthetic local CPU fixture only','Unique requests share three eligibility states, not independent policy families',
+                            'One read-only dependency and local SQLite effects',
                             'No inference or remote latency/cost measured','Same-observation full rerun is not a live dependency query',
                             'Source truth labels are explicit frozen fixtures, not real customer outcomes']}
+
+
+def load_cases(path):
+    cases = json.loads(path.read_text())
+    if not isinstance(cases, list) or not cases:
+        raise ValueError('Study requires a nonempty list of frozen orders')
+    scenarios = [Scenario(**case) for case in cases]
+    if (len({case.scenario_id for case in scenarios}) != len(cases)
+            or len({case.request for case in scenarios}) != len(cases)):
+        raise ValueError('Study requires distinct frozen scenario IDs and requests')
+    return cases
 
 
 def main():
@@ -87,9 +101,10 @@ def main():
     p.add_argument('--repetitions',type=int,default=20)
     p.add_argument('--warmup',type=int,default=2)
     args=p.parse_args()
-    cases=json.loads(args.cases.read_text())
-    if len(cases)!=100 or len({c['scenario_id'] for c in cases})!=100 or len({c['request'] for c in cases})!=100:
-        p.error('Study requires 100 distinct frozen scenario IDs and requests')
+    try:
+        cases=load_cases(args.cases)
+    except (ValueError, TypeError, KeyError) as error:
+        p.error(str(error))
     if args.repetitions<1 or args.warmup<0:
         p.error('Invalid repetition/warmup counts')
     rows=study(cases,args.repetitions,args.warmup)
