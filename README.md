@@ -48,6 +48,19 @@ still has only three eligibility states. It is not a broader refund-policy,
 real-customer, LLM-quality, speedup or cost-savings result. The report retains raw
 timings and records this limitation. Repetitions do not count as distinct orders.
 
+## Dependency-aware replay
+
+The fixed-prefix replay above handles one policy variable over a one-tool trace. `docs/dependency-replay.md`
+describes the extension to versioned dependency graphs: typed nodes with data and control edges, cache keys that
+bind operation version, parameters, inputs, activation and captured observations, affected-subgraph
+invalidation with early cutoff, crash-safe isolated effect ledgers in SQLite, first-divergence explanations, an
+independent full-rerun oracle and negative-control mutants.
+
+```bash
+PYTHONPATH=src python -m unittest discover -s tests
+PYTHONPATH=src python -m counterfactual_replay_lab.cli demo --port 8766   # http://127.0.0.1:8766
+```
+
 ## Integration status
 
 The fixture proves replay semantics locally. The `neatlogs_integration.py` adapter uses the documented Python SDK path (`neatlogs.init`, `neatlogs.span`, `neatlogs.flush`, and `neatlogs.shutdown`) only when the installed SDK exposes all of those APIs and `NEATLOGS_API_KEY` is supplied. Without both, the project emits local JSON only and says so explicitly. See `docs/integration-status.md`.
